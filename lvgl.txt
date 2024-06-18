@@ -1,0 +1,460 @@
+1、从总的缓冲区大小中减去当前写入缓冲区的大小。也就是说，减少总的缓冲区大小，使其等于当前写入缓冲区之前的大小。
+例如，如果总的缓冲区大小是100，当前写入缓冲区的大小是20，那么执行这行代码后，总的缓冲区大小将变为80。
+
+2、点滴间隔时间累加值：将当前写入缓冲区的大小设置为累积计时器的值
+
+（在定时器溢出中断中进行累加当前1ms时间
+//点滴检测定时器
+        g_stDropDetectAlgorithm.stDropDetectTimer.ulDropIntervalCumulativeTimer++;）
+
+3、增加总的缓冲区大小：将当前写入缓冲区的大小更新为累积计时器的值
+
+4、取最大值最小值：更新缓冲区的最大值和第二大值。当新的时间间隔值大于当前的最大值时，我们将当前的最大值保存为第二大值，并将新的时间间隔值设置为新的最大值。
+（作用：如果当前写入缓冲区的时间间隔值大于最大值，那么更新最大值和第二大值。
+如果当前写入缓冲区的时间间隔值大于第二大值但小于最大值，那么更新第二大值。
+这样，缓冲区的最大值和第二大值总是保持最新的最大值和第二大值。）
+
+4.1如果当前写入缓冲区的时间间隔值大于缓冲区的最大值，那么执行以下操作。
+4.2将缓冲区的第二大值 (ulBuffSecondLargestValue) 设置为当前的最大值 (ulBuffMaxValue)。这是因为当前的最大值将被更新为新的最大值，所以我们需要保存当前的最大值作为第二大值。
+4.3将缓冲区的最大值 (ulBuffMaxValue) 更新为当前写入缓冲区的时间间隔值 (ulDropIntervalTimeBuff[ucCurWrBuffIndex])。这是因为当前写入缓冲区的时间间隔值现在是新的最大值。
+
+4.4.1检查当前写入缓冲区的时间间隔值(ulDropIntervalTimeBuff[ucCurWrBuffIndex]) 是否大于缓冲区的第二大值 (ulBuffSecondLargestValue)。
+4.4.2将缓冲区的第二大值 (ulBuffSecondLargestValue) 更新为当前写入缓冲区的时间间隔值 (ulDropIntervalTimeBuff[ucCurWrBuffIndex])。这是因为当前写入缓冲区的时间间隔值现在是新的第二大值。
+（作用：如果当前写入缓冲区的时间间隔值大于第二大值，那么更新第二大值为当前写入缓冲区的时间间隔值。
+这样，缓冲区的第二大值总是保持最新的第二大值。）
+4.5检查当前写入缓冲区的时间间隔值 (ulDropIntervalTimeBuff[ucCurWrBuffIndex]) 是否小于缓冲区的最小值 (ulBuffMinValue)。
+4.5.1将缓冲区的最小值 (ulBuffMinValue) 更新为当前写入缓冲区的时间间隔值 (ulDropIntervalTimeBuff[ucCurWrBuffIndex])。这是因为当前写入缓冲区的时间间隔值现在是新的最小值。
+（作用：如果当前写入缓冲区的时间间隔值小于最小值，那么更新最小值为当前写入缓冲区的时间间隔值。
+这样，缓冲区的最小值总是保持最新的最小值。）
+
+截止：如果当前写入缓冲区的时间间隔值大于最大值，那么更新最大值和第二大值。
+如果当前写入缓冲区的时间间隔值大于第二大值但小于最大值，那么更新第二大值。
+如果当前写入缓冲区的时间间隔值小于最小值，那么更新最小值。
+这样，缓冲区的最大值、第二大值和最小值总是保持最新的最大值、第二大值和最小值。
+
+4.6将当前写入缓冲区的索引增加1，这样可以指向下一个缓冲区元素，以便在下一次写入操作中使用。
+
+例如，如果当前写入缓冲区的索引是5，那么执行这行代码后，索引将变为6。这样，下一次写入操作将写入到缓冲区的第6个元素中。
+
+这个操作通常用于循环写入缓冲区，以便不断地写入新的数据同时覆盖旧的数据。
+
+5.1计算当前1ml液滴的平均时间间隔
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffAverageFilterBefore 是一个变量，用于存储当前1ml液滴的平均时间间隔。
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffSum 是一个变量，用于存储当前1ml液滴的时间间隔总和。
+g_stDropDetectAlgorithm.ucDropNumPerMl 是一个变量，用于存储每毫升液滴的数量。
+将时间间隔总和除以每毫升液滴的数量，以计算当前1ml液滴的平均时间间隔。
+5.2g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucCurWrBuffIndex = 0;
+这个代码将缓冲区的当前写入索引 (ucCurWrBuffIndex) 重置为0。
+
+这个操作的作用是将缓冲区的写指针复位，以便重新开始写入新的数据。由于之前的数据已经被计算了平均时间间隔，现在可以将缓冲区清空，准备写入新的数据。
+
+总的来说，这段代码计算当前1ml液滴的平均时间间隔，并将缓冲区的写指针复位，以便准备写入新的数据。
+
+6.计算滤波值
+6.1if(1 == g_stDropDetectAlgorithm.ucDropFilterWay)
+这个条件语句检查变量 g_stDropDetectAlgorithm.ucDropFilterWay 的值是否等于1。如果是，那么执行以下代码。
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffFilterValue = g_stDropDetectAlgorithm.unDropFilterFactor*g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffMaxValue/100;
+这个代码计算滤波值 (ulBuffFilterValue)，使用缓冲区的最大值 (ulBuffMaxValue)。
+
+6.2else if(2 == g_stDropDetectAlgorithm.ucDropFilterWay)
+这个条件语句检查变量 g_stDropDetectAlgorithm.ucDropFilterWay 的值是否等于2。如果是，那么执行以下代码。
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffFilterValue = g_stDropDetectAlgorithm.unDropFilterFactor*g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffSecondLargestValue/100;
+这个代码计算滤波值 (ulBuffFilterValue)，使用缓冲区的第二大值 (ulBuffSecondLargestValue)。
+
+6.3else if(3 == g_stDropDetectAlgorithm.ucDropFilterWay)
+这个条件语句检查变量 g_stDropDetectAlgorithm.ucDropFilterWay 的值是否等于3。如果是，那么执行以下代码。
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffFilterValue = g_stDropDetectAlgorithm.unDropFilterFactor*g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffAverageFilterBefore/100;
+这个代码计算滤波值 (ulBuffFilterValue)，使用缓冲区的平均值 (ulBuffAverageFilterBefore)。
+
+总的来说，这段代码计算滤波值，根据 g_stDropDetectAlgorithm.ucDropFilterWay 的值选择不同的计算方法：
+
+如果 g_stDropDetectAlgorithm.ucDropFilterWay 等于1，使用缓冲区的最大值计算滤波值。
+如果 g_stDropDetectAlgorithm.ucDropFilterWay 等于2，使用缓冲区的第二大值计算滤波值。
+如果 g_stDropDetectAlgorithm.ucDropFilterWay 等于3，使用缓冲区的平均值计算滤波值。
+
+7.1小于最小时间间隔，则认为是假点滴直接滤掉,滤波值小于最小时间，则取最小时间
+if(g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffFilterValue < DROP_INTERVAL_MIN_TIME)
+这个条件语句检查滤波值 (ulBuffFilterValue) 是否小于最小时间间隔 (DROP_INTERVAL_MIN_TIME)。
+
+如果 滤波值小于最小时间间隔，那么执行以下代码：
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffFilterValue = DROP_INTERVAL_MIN_TIME;
+这个代码将滤波值设置为最小时间间隔。这意味着，如果滤波值太小，可能是由于噪音或干扰的原因，那么我们将其设置为最小时间间隔，以避免影响后续的计算。
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucFiteredDropNum = 0;
+这个代码将统计被滤掉的点滴数清零。
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucLessReinstallIntervalTimeDropNum = 0;
+这个代码将统计小于重装时间间隔的点滴数清零。
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucContinueLessReinstallIntervalTimeDropNum = 0;
+这个代码将统计连续小于重装时间间隔的点滴数清零。
+
+总的来说，这段代码用于处理滤波值小于最小时间间隔的情况，并将统计被滤掉的点滴数清零，以便后续的计算。
+//点滴间隔最小时间 80ms
+8.1
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucFiteredDropNum = 0;
+这个代码将统计被滤掉的点滴数清零。
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucLessReinstallIntervalTimeDropNum = 0;
+这个代码将统计小于重装时间间隔的点滴数清零。
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucContinueLessReinstallIntervalTimeDropNum = 0;
+这个代码将统计连续小于重装时间间隔的点滴数清零。
+
+ulTimeTemp = 0;
+这个代码将临时变量 ulTimeTemp 初始化为0。
+
+for(ucCount = 0; ucCount < g_stDropDetectAlgorithm.ucDropNumPerMl; ucCount++)
+这个循环将遍历每一个点滴的时间间隔数据。
+
+if((g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulDropIntervalTimeBuff[ucCount] < g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffFilterValue) && (ulTimeTemp < g_stDropDetectAlgorithm.ulLEDFlashFilterTime))
+这个条件语句检查当前点滴的时间间隔是否小于滤波值，并且临时变量 ulTimeTemp 是否小于闪光滤波时间。如果是，那么执行以下代码。
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucFiteredDropNum++;
+这个代码将统计被滤掉的点滴数加1。
+
+ulTimeTemp += g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulDropIntervalTimeBuff[ucCount];
+这个代码将临时变量 ulTimeTemp 加上当前点滴的时间间隔。
+
+else { ulTimeTemp = 0; }
+如果条件语句不成立，那么将临时变量 ulTimeTemp 重置为0。
+
+if(g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulDropIntervalTimeBuff[ucCount] < DROP_REINSTALL_INTERVAL_TIME)
+这个条件语句检查当前点滴的时间间隔是否小于重装时间间隔。如果是，那么执行以下代码。
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucContinueLessReinstallIntervalTimeDropNum++;
+这个代码将统计连续小于重装时间间隔的点滴数加1。
+
+else { g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucContinueLessReinstallIntervalTimeDropNum = 0; }
+如果条件语句不成立，那么将统计连续小于重装时间间隔的点滴数清零。
+
+if(g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulDropIntervalTimeBuff[ucCount] < DROP_REINSTALL_INTERVAL_TIME)
+这个条件语句检查当前点滴的时间间隔是否小于重装时间间隔。如果是，那么执行以下代码。
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucLessReinstallIntervalTimeDropNum++;
+这个代码将统计小于重装时间间隔的点滴数加1。
+
+总的来说，这段代码用于统计被滤掉的点滴数、连续小于重装时间间隔的点滴数和小于重装时间间隔的点滴数，并将这些统计结果存储在结构体 g_stDropDetectAlgorithm.stDropIntervalTimeBuff 中。
+
+9.1
+g_stDropDetectAlgorithm.ulDropDetectNum += (g_stDropDetectAlgorithm.ucDropNumPerMl - g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucFiteredDropNum);
+这行代码是累计有效的点滴数。在这里，g_stDropDetectAlgorithm.ulDropDetectNum 是累计的点滴数，g_stDropDetectAlgorithm.ucDropNumPerMl 是每毫升的点滴数，g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucFiteredDropNum 是滤波后的点滴数。代码将累计的点滴数增加了每毫升的点滴数减去滤波后的点滴数。
+
+g_stDropDetectAlgorithm.ulCycleNumOfTotalSampleTime += 1;
+这行代码是采样周期的累加计数器，每执行一次采样操作就增加1。
+
+g_stDropDetectAlgorithm.ucFiteredDropRatio = 100 - 100 * g_stDropDetectAlgorithm.ulDropDetectNum / (g_stDropDetectAlgorithm.ulCycleNumOfTotalSampleTime * g_stDropDetectAlgorithm.ucDropNumPerMl);
+这行代码是计算点滴被滤掉的百分比。计算公式是：滤掉的百分比 = 100 - (累计的点滴数 / (采样周期数 * 每毫升的点滴数))。
+
+if (g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucFiteredDropNum > g_stDropDetectAlgorithm.ucFiteredDropMaxNum) { ... }
+这行代码是检测滤波后的点滴数是否超过最大值，如果超过就更新最大值。
+
+if (g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ucFiteredDropNum < g_stDropDetectAlgorithm.ucFiteredDropMinNum) { ... }
+这行代码是检测滤波后的点滴数是否小于最小值，如果小于就更新最小值。
+
+总的来说，这段代码是用于统计滴.drop的数量和滤波后的结果，并计算滤掉的百分比和最大、最小值。
+10.1
+g_stDropDetectAlgorithm.ucPumpRunningCycleNum：这是一个变量，记录当前泵浦运行的周期数（cycle number）。
+PUMP_CYCCLE_NUM_PRE_ML：这是一个常量，表示每毫升（ml）需要的泵浦运行周期数。
+条件语句 if (g_stDropDetectAlgorithm.ucPumpRunningCycleNum >= PUMP_CYCCLE_NUM_PRE_ML) 的意思是：
+
+如果当前泵浦运行的周期数 g_stDropDetectAlgorithm.ucPumpRunningCycleNum 大于或等于每毫升需要的泵浦运行周期数 PUMP_CYCCLE_NUM_PRE_ML，那么执行下一步操作。
+
+换言之，这个条件语句是检查泵浦是否已经运行了足够的周期数，以便生成一个毫升的液体。只有当泵浦运行的周期数达到或超过了这个阈值时，才会执行下一步操作。
+
+在电机马盘.c中设置：            //检测到转一圈标志
+            g_bOneCycleFlag = TRUE;
+            //点滴检测----蠕动泵转一圈标志
+            g_stDropDetectAlgorithm.ucPumpRunningCycleNum++;
+10.1.1
+g_stDropDetectAlgorithm.ucPumpRunningCycleNum = 0;
+将泵浦运行的周期数 g_stDropDetectAlgorithm.ucPumpRunningCycleNum 重置为 0。
+
+g_stDropDetectAlgorithm.ulDropDetectNum = g_stDropDetectAlgorithm.ulCycleNumOfTotalSampleTime*(g_stDropDetectAlgorithm.ucDropNumPerMl-g_stDropDetectAlgorithm.ucFiteredDropMinNum);
+计算整个采样时间内检测到的点滴数 g_stDropDetectAlgorithm.ulDropDetectNum。计算公式是：检测到的点滴数 = 采样周期数 * (每毫升的点滴数 - 滤波后的最小点滴数)。
+
+g_stDropDetectAlgorithm.ulDropTheroyNum = g_stDropDetectAlgorithm.stDropDetectTimer.ulContinueSampleTimer/g_stDropDetectAlgorithm.ulTheroyIntervalTime;
+计算采样时间内理论点滴数 g_stDropDetectAlgorithm.ulDropTheroyNum。计算公式是：理论点滴数 = 采样时间 / 理论间隔时间。
+
+g_stDropDetectAlgorithm.stDropDetectTimer.ulContinueSampleTimer = 0;
+将采样时间计时器 g_stDropDetectAlgorithm.stDropDetectTimer.ulContinueSampleTimer 重置为 0。
+
+g_stDropDetectAlgorithm.nDropRateErrorAfterFilter = 100*(s32)(g_stDropDetectAlgorithm.ulDropDetectNum - g_stDropDetectAlgorithm.ulDropTheroyNum)/(s32)g_stDropDetectAlgorithm.ulDropTheroyNum;
+计算滴速偏差 g_stDropDetectAlgorithm.nDropRateErrorAfterFilter。计算公式是：滴速偏差 = 100 * (检测到的点滴数 - 理论点滴数) / 理论点滴数。
+
+g_stDropDetectAlgorithm.ucFiteredDropMaxNum = 0;
+g_stDropDetectAlgorithm.ucFiteredDropMinNum = 0xff;
+将滤波后的最大点滴数 g_stDropDetectAlgorithm.ucFiteredDropMaxNum 和最小点滴数 g_stDropDetectAlgorithm.ucFiteredDropMinNum 重置为 0 和 0xff。
+
+g_stDropDetectAlgorithm.ulCycleNumOfTotalSampleTime = 0;
+将采样周期数 g_stDropDetectAlgorithm.ulCycleNumOfTotalSampleTime 重置为 0。
+
+总的来说，这段代码是用于计算和更新一些变量，例如检测到的点滴数、理论点滴数、滴速偏差等，并重置一些变量为初始值。
+
+10.1.2滴速误差报警判断
+if(g_stDropDetectAlgorithm.nDropRateErrorAfterFilter > ucDripMonitorParameter)
+判断滴速误差 g_stDropDetectAlgorithm.nDropRateErrorAfterFilter 是否大于允许的误差参数 ucDripMonitorParameter。如果大于，则执行下一步操作。
+
+g_stDropDetectAlgorithm.ucDropRateSlowErrorAlarmCnt = 0;
+将滴速慢速报警计数器 g_stDropDetectAlgorithm.ucDropRateSlowErrorAlarmCnt 重置为 0。
+
+g_stDropDetectAlgorithm.ucDropRateFastErrorAlarmCnt++;
+将滴速快速报警计数器 g_stDropDetectAlgorithm.ucDropRateFastErrorAlarmCnt 递增 1。
+
+if(g_stDropDetectAlgorithm.ucDropRateFastErrorAlarmCnt >= g_stDropDetectAlgorithm.ucDropRateErrorAlarmPumoCycleNum)
+判断滴速快速报警计数器 g_stDropDetectAlgorithm.ucDropRateFastErrorAlarmCnt 是否达到报警阈值 g_stDropDetectAlgorithm.ucDropRateErrorAlarmPumoCycleNum。如果达到，则执行下一步操作。
+
+g_stDropDetectAlgorithm.ucDropRateFastErrorAlarmCnt = 0;
+将滴速快速报警计数器 g_stDropDetectAlgorithm.ucDropRateFastErrorAlarmCnt 重置为 0。
+
+enCurInfusionAlarm = GetInfusionAlarmStatus();
+获取当前输液报警状态 enCurInfusionAlarm。
+
+if(INFUSION_ALARM_DRIP_ABNORMAL != enCurInfusionAlarm)
+判断当前报警状态是否不是滴速异常报警 INFUSION_ALARM_DRIP_ABNORMAL。如果不是，则执行下一步操作。
+
+SetInfusionAlarmStatus(INFUSION_ALARM_DRIP_ABNORMAL);
+设置当前报警状态为滴速异常报警 INFUSION_ALARM_DRIP_ABNORMAL。
+
+g_stDropDetectAlgorithm.ucDripMonitorAbnormalFlag = 1;
+将滴速监控异常标志 g_stDropDetectAlgorithm.ucDripMonitorAbnormalFlag 设置为 1。
+
+g_ucDropRateAbnormalType = 1;
+将滴速异常类型 g_ucDropRateAbnormalType 设置为 1，表示滴速异常。
+
+else if 语句
+
+else if(g_stDropDetectAlgorithm.nDropRateErrorAfterFilter < -ucDripMonitorParameter)
+判断滴速误差 g_stDropDetectAlgorithm.nDropRateErrorAfterFilter 是否小于允许的误差参数 ucDripMonitorParameter 的负值。如果小于，则执行下一步操作。
+
+g_stDropDetectAlgorithm.ucDropRateFastErrorAlarmCnt = 0;
+将滴速快速报警计数器 g_stDropDetectAlgorithm.ucDropRateFastErrorAlarmCnt 重置为 0。
+
+g_stDropDetectAlgorithm.ucDropRateSlowErrorAlarmCnt++;
+将滴速慢速报警计数器 g_stDropDetectAlgorithm.ucDropRateSlowErrorAlarmCnt 递增 1。
+
+if(g_stDropDetectAlgorithm.ucDropRateSlowErrorAlarmCnt >= g_stDropDetectAlgorithm.ucDropRateErrorAlarmPumoCycleNum)
+判断滴速慢速报警计数器 g_stDropDetectAlgorithm.ucDropRateSlowErrorAlarmCnt 是否达到报警阈值 g_stDropDetectAlgorithm.ucDropRateErrorAlarmPumoCycleNum。如果达到，则执行下一步操作。
+
+g_stDropDetectAlgorithm.ucDropRateSlowErrorAlarmCnt = 0;
+将滴速慢速报警计数器 g_stDropDetectAlgorithm.ucDropRateSlowErrorAlarmCnt 重置为 0。
+
+enCurInfusionAlarm = GetInfusionAlarmStatus();
+获取当前输液报警状态 enCurInfusionAlarm。
+
+if(INFUSION_ALARM_DRIP_ABNORMAL != enCurInfusionAlarm)
+判断当前报警状态是否不是滴速异常报警 INFUSION_ALARM_DRIP_ABNORMAL。如果不是，则执行下一步操作。
+
+SetInfusionAlarmStatus(INFUSION_ALARM_DRIP_ABNORMAL);
+设置当前报警状态为滴速异常报警 INFUSION_ALARM_DRIP_ABNORMAL。
+
+g_stDropDetectAlgorithm.ucDripMonitorAbnormalFlag = 1;
+将滴速监控异常标志 g_stDropDetectAlgorithm.ucDripMonitorAbnormalFlag 设置为 1。
+
+g_ucDropRateAbnormalType = 2;
+将滴速异常类型 g_ucDropRateAbnormalType 设置为 2。
+
+else 语句
+
+g_stDropDetectAlgorithm.ucDropRateFastErrorAlarmCnt = 0;
+将滴速快速报警计数器 g_stDropDetectAlgorithm.ucDropRateFastErrorAlarmCnt 重置为 0。
+
+g_stDropDetectAlgorithm.ucDropRateSlowErrorAlarmCnt = 0;
+将滴速慢速报警计数器 g_stDropDetectAlgorithm.ucDropRateSlowErrorAlarmCnt 重置为 0。
+
+最后的if语句
+
+if(((g_stDropDetectAlgorithm.ulDropDetectNum > (g_stDropDetectAlgorithm.ucDropRateErrorAlarmPumoCycleNum*g_stDropDetectAlgorithm.ucDropNumPerMl)) && (g_stDropDetectAlgorithm.ulDropDetectNum > 5*g_stDropDetectAlgorithm.ulDropTheroyNum)) || (g_stDropDetectAlgorithm.ulDropDetectNum > 10*g_stDropDetectAlgorithm.ucDropNumPerMl))
+判断滴速是否异常，满足以下两个条件之一：
+
+滴速检测到的点滴数超过允许的误差参数 ucDripMonitorParameter 的 5 倍以上。
+滴速检测到的点滴数超过 10 毫升的液滴滴下。
+如果 满足以上条件，则执行下一步操作。
+
+enCurInfusionAlarm = GetInfusionAlarmStatus();
+获取当前输液报警状态 enCurInfusionAlarm。
+
+if(INFUSION_ALARM_DRIP_ABNORMAL != enCurInfusionAlarm)
+判断当前报警状态是否不是滴速异常报警 INFUSION_ALARM_DRIP_ABNORMAL。如果不是，则执行下一步操作。
+
+SetInfusionAlarmStatus(INFUSION_ALARM_DRIP_ABNORMAL);
+设置当前报警状态为滴速异常报警 INFUSION_ALARM_DRIP_ABNORMAL。
+
+g_stDropDetectAlgorithm.ucDripMonitorAbnormalFlag = 1;
+将滴速监控异常标志 g_stDropDetectAlgorithm.ucDripMonitorAbnormalFlag 设置为 1。
+
+g_ucDropRateAbnormalType = 3;
+将滴速异常类型 g_ucDropRateAbnormalType 设置为 3。
+
+总的来说，这段代码是用于检测滴速是否异常，并在异常时触发报警。
+
+11.1
+在校准程序中点击启动校准时调用
+//点滴夹记录的点滴数清零 
+				DropResingEdgeCntReset();
+12.1 
+
+设置点滴模式理论滴落时间间隔
+void SetTheroyIntervalTime(u32 ulTheroyIntervalTime, u32 ulCurInfusionSpeed)
+
+//设置点滴滴落时间间隔（在注射运行任务中调用）
+    ulDropIntervalTime = GetOneDropTime();
+    SetTheroyIntervalTime(ulDropIntervalTime, s_ulCurInfusionSpeed);
+
+-------补充·motor.c
+static u32 s_ulCurInfusionSpeed = 0;            //当前的注射速度
+static u32 s_ulOneDropTime = 0;                 //一滴点滴滴落时间
+u32 GetOneDropTime(void)
+{
+    return s_ulOneDropTime;
+}
+
+//=================================================================
+//函 数 名：CalOneDropTime
+//功能描述：计算一滴点滴滴落的时间
+//输    入：void
+//输    出：void
+//返    回：void
+//=================================================================
+static void CalOneDropTime(void)
+{
+	float fDMinToMlHRatio = 0;
+	enInfusionType enCurInfusionType = (enInfusionType)GetRateModeDataVal(RATE_MODE_TYPE_INDEX);
+	
+	switch(enCurInfusionType)
+	{
+		case INFUSION_10D:
+			fDMinToMlHRatio = ML_D_IV10;
+			break;
+		case INFUSION_15D:
+			fDMinToMlHRatio = ML_D_IV15;
+			break;
+		case INFUSION_18D:
+			fDMinToMlHRatio = ML_D_IV18;
+			break;
+		case INFUSION_20D:
+			fDMinToMlHRatio = ML_D_IV20;
+			break;
+		case INFUSION_60D:
+			fDMinToMlHRatio = ML_D_IV60;
+			break;
+		default:
+			fDMinToMlHRatio = ML_D_IV20;
+			break;
+	}
+	
+    s_ulOneDropTime = (u32)(60000.0/((float)s_ulCurInfusionSpeed/fDMinToMlHRatio/60.0/100.0));
+}
+
+    //计算一滴点滴滴落的时间 控制电机正转函数中调用
+    CalOneDropTime();
+
+12.2
+enInfusionType enCurInfusionType = INFUSION_20D;
+设置当前输液类型为 INFUSION_20D。
+
+g_ucDropRateAbnormalType = 0;
+将滴速异常类型 g_ucDropRateAbnormalType 设置为 0。
+
+memset((void*)&g_stDropDetectAlgorithm, 0, sizeof(stDropDetectAlgorithmType));
+将滴速检测算法的结构体 g_stDropDetectAlgorithm 初始化为 0。
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffMaxValue = 0x00;
+将滴速检测算法的缓存最大值 g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffMaxValue 设置为 0。
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffSecondLargestValue = 0;
+将滴速检测算法的缓存第二大值 g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffSecondLargestValue 设置为 0。
+
+g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffMinValue = 0xffffffff;
+将滴速检测算法的缓存最小值 g_stDropDetectAlgorithm.stDropIntervalTimeBuff.ulBuffMinValue 设置为最大值 0xffffffff。
+
+g_stDropDetectAlgorithm.ulTheroyIntervalTime = ulTheroyIntervalTime;
+将理论间隔时间 g_stDropDetectAlgorithm.ulTheroyIntervalTime 设置为 ulTheroyIntervalTime。
+
+g_stDropDetectAlgorithm.ulTheroyInfusionSpeed = ulCurInfusionSpeed;
+将理论输液速度 g_stDropDetectAlgorithm.ulTheroyInfusionSpeed 设置为 ulCurInfusionSpeed。
+
+g_stDropDetectAlgorithm.ulLEDFlashFilterTime = ulTheroyIntervalTime/2;
+将 LED 闪烁滤波时间 g_stDropDetectAlgorithm.ulLEDFlashFilterTime 设置为理论间隔时间的一半。
+
+g_stDropDetectAlgorithm.ucDropRateErrorAlarmPumoCycleNum = 3;
+将滴速错误报警周期数 g_stDropDetectAlgorithm.ucDropRateErrorAlarmPumoCycleNum 设置为 3。
+
+if(g_stDropDetectAlgorithm.ulLEDFlashFilterTime > 1000)
+检查 LED 闪烁滤波时间是否超过 1000ms，如果超过，则将其设置为 1000ms。
+
+g_stDropDetectAlgorithm.bFristDropFlag = TRUE;
+将第一次滴速检测标志 g_stDropDetectAlgorithm.bFristDropFlag 设置为 TRUE。
+
+g_stDropDetectAlgorithm.ucPumpRunningCycleNum = 0;
+将泵浦运行周期数 g_stDropDetectAlgorithm.ucPumpRunningCycleNum 设置为 0。
+
+g_stDropDetectAlgorithm.ucFiteredDropMaxNum = 0;
+将滤波后的最大点滴数 g_stDropDetectAlgorithm.ucFiteredDropMaxNum 设置为 0。
+
+g_stDropDetectAlgorithm.ucFiteredDropMinNum = 0xff;
+将滤波后的最小点滴数 g_stDropDetectAlgorithm.ucFiteredDropMinNum 设置为最大值 0xff。
+
+g_stDropDetectAlgorithm.unDropFilterFactor = GetDropFilterFactor();
+获取滴速滤波因子 g_stDropDetectAlgorithm.unDropFilterFactor。
+
+if(g_stDropDetectAlgorithm.unDropFilterFactor <= 100)
+检查滴速滤波因子是否小于或等于 100，如果是，则执行下一步操作。
+
+g_stDropDetectAlgorithm.ucDropFilterWay = 1;
+将滴速滤波方式 g_stDropDetectAlgorithm.ucDropFilterWay 设置为 1。
+
+else if(g_stDropDetectAlgorithm.unDropFilterFactor <= 200)
+检查滴速滤波因子是否小于或等于 200，如果是，则执行下一步操作。
+
+g_stDropDetectAlgorithm.ucDropFilterWay = 2;
+将滴速滤波方式 g_stDropDetectAlgorithm.ucDropFilterWay 设置为 2。
+
+else if(g_stDropDetectAlgorithm.unDropFilterFactor <= 300)
+检查滴速滤波因子是否小于或等于 300，如果是，则执行下一步操作。
+
+g_stDropDetectAlgorithm.ucDropFilterWay = 3;
+将滴速滤波方式 g_stDropDetectAlgorithm.ucDropFilterWay 设置为 3。
+
+else
+如果滴速滤波因子大于 300，则将其设置为最大值的 0.33。
+
+if(g_stDropDetectAlgorithm.ulTheroyIntervalTime < 180)
+检查理论间隔时间是否小于 180ms，如果是，则执行下一步操作。
+
+g_stDropDetectAlgorithm.unDropFilterFactor -= 10;
+将滴速滤波因子减少 10。
+
+SetReinstallDropSensorAlarmCancelFlag(FALSE);
+取消重新安装点滴夹报警标志清零。
+
+12.3
+用于根据输液方式（enCurInfusionType）设置每毫升液体中含有的滴数（g_stDropDetectAlgorithm.ucDropNumPerMl）。
+
+首先，代码通过函数GetRateModeDataVal获取当前输液方式（enCurInfusionType），然后根据不同的输液方式，使用switch语句来设置g_stDropDetectAlgorithm.ucDropNumPerMl的值。
+
+这里有五种输液方式：
+
+INFUSION_10D：每毫升液体中含有10滴液体
+INFUSION_15D：每毫升液体中含有15滴液体
+INFUSION_18D：每毫升液体中含有18滴液体
+INFUSION_20D：每毫升液体中含有20滴液体
+INFUSION_60D：每毫升液体中含有60滴液体
+这些值将用于后续的输液算法中，以计算输液速度和输液量等参数。
+
+-----------
+//=================================================================================================在传感器维护中
+//函 数 名：GetDropFilterFactor
+//功能描述：获取点滴检测滤波因子
+//输    入：无
+//输    出：无
+//返    回：点滴检测滤波因子，10~70-----最大值滤波因子  110~200-----第二大值滤波因子    210~300----平均值滤波因子
+//=================================================================================================
+u16 GetDropFilterFactor(void)
+{
+    return s_astSensorMaintanceSet2Data[DRIP_FILTER_MENU_ID_INDEX].ulVal;
+}
